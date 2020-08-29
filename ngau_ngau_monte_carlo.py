@@ -1,3 +1,13 @@
+"""
+This script runs Monte Carlo simulation of the playing of ngau-ngau
+
+Parameters:
+player_num is the simulated number of players excluding the banker (2 <= n <= 9)
+rounds is the number of hands in each session of game (r >= 1)
+session is the number of iteration for simulation (s >= 1)
+
+A large value of the parameters can lead to long computational time.
+"""
 import random
 import pandas as pd
 import numpy as np
@@ -38,8 +48,8 @@ brute force solution
 def arrange(cards):
     # look for formation of 0 
     result = []
-    for ipos, i in enumerate(cards):
-        for jpos, j in enumerate(cards):
+    for ipos, _ in enumerate(cards):
+        for jpos, _ in enumerate(cards):
             if ipos == jpos:
                 continue
             n = cards[:]
@@ -197,7 +207,6 @@ def play_sessions(rounds, player_num, sessions):
     return pnl_list
 
 
-
 def stat_of(df, player):
     data = df[df.player==player]['pnl']
     mean = statistics.mean(data)
@@ -231,18 +240,18 @@ https://www.machinelearningplus.com/python/parallel-processing-python/
 """
 
 # search for statistical result for change in parameters
-def grid_search_once(n, r, sessions=10):
+def grid_search_once(n, r, sessions):
     tmp_session_result = play_sessions(r, n, sessions)
     return {str((n,r)): session_stat(tmp_session_result)}
 
 
 def parallel_grid_search(player_num, rounds, sessions=1000):
     # parallelization
-    param_list = [(n,r) for n in player_num for r in rounds]
+    param_list = [(n,r,sessions) for n in player_num for r in rounds]
     pool = mp.Pool(mp.cpu_count())
 
     sessions_results = []
-    sessions_results = pool.starmap_async(grid_search_once, [(pl[0], pl[1]) for pl in param_list]).get()
+    sessions_results = pool.starmap_async(grid_search_once, [(pl[0], pl[1], sessions) for pl in param_list]).get()
 
     pool.close()
     final_result = {}
@@ -259,7 +268,6 @@ def main():
 
     deck = create_deck()
 
-    ## Comparison of two different hands
     # setting up comparison dict by assigning explicit score to according to hand value
     win_hierarchy = {'all-big': 13, 'all-small': 12, 'ngau-pair': 11, 'ngau-ngau': 10, 'no-game': 0} 
     for x in range(1,10):
@@ -275,8 +283,8 @@ def main():
 
     # simulation of playing between 1 chosen banker and n players
     player_num = list(range(2,9))
-    rounds = list(range(20, 110, 10))
-    sessions = 10000
+    rounds = list(range(20, 200, 10))
+    sessions = 20000
 
     # player_num must be 2 or above; rounds must be >= 1
     grid = parallel_grid_search(player_num=player_num, rounds=rounds, sessions=sessions)
@@ -284,7 +292,6 @@ def main():
     # write to file
     with open('./ngau-ngau/result.json', 'w+') as fp:
         json.dump(grid, fp)
-
 
 
 if __name__ == "__main__":
