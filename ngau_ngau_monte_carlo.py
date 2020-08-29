@@ -290,7 +290,7 @@ def main():
     grid = parallel_grid_search(player_num=player_num, rounds=rounds, sessions=sessions)
 
     # write to file
-    with open('./ngau-ngau/result.json', 'w+') as fp:
+    with open(f'./ngau-ngau/result_{player_num}_{rounds}_{sessions}.json', 'w+') as fp:
         json.dump(grid, fp)
 
 
